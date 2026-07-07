@@ -1,0 +1,1015 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>AI Traffic Control System</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #06070d;
+    --road: #191922;
+    --road-dark: #131318;
+    --green: #00ffcc;
+    --red: #ff3b3b;
+    --yellow: #ffb300;
+    --accent: #00ffcc;
+    --panel-bg: #0c0e18;
+    --border: #1a2035;
+    --text-dim: #374455;
+    --text-mid: #7a8fa8;
+    --text-bright: #c8dff0;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text-bright);
+    font-family: 'Share Tech Mono', monospace;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-height: 100vh;
+    overflow: hidden;
+    user-select: none;
+  }
+
+  header {
+    text-align: center;
+    padding: 14px 0 6px;
+  }
+
+  h1 {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 18px;
+    font-weight: 900;
+    letter-spacing: 7px;
+    color: var(--green);
+    text-shadow: 0 0 18px rgba(0,255,204,0.5), 0 0 40px rgba(0,255,204,0.2);
+  }
+
+  .subtitle {
+    font-size: 9px;
+    letter-spacing: 8px;
+    color: var(--text-dim);
+    margin-top: 4px;
+    text-transform: uppercase;
+  }
+
+  #layout {
+    display: flex;
+    gap: 14px;
+    padding: 6px 14px;
+    align-items: flex-start;
+  }
+
+  canvas {
+    display: block;
+    flex-shrink: 0;
+    border-radius: 3px;
+    box-shadow: 0 0 40px rgba(0,0,0,0.8);
+  }
+
+  /* ---- SIDE PANEL ---- */
+  #panel {
+    width: 230px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  /* AI decision box */
+  #ai-box {
+    background: #080b12;
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--yellow);
+    border-radius: 4px;
+    padding: 10px 12px;
+  }
+
+  .ai-tag {
+    font-size: 8px;
+    letter-spacing: 5px;
+    color: var(--text-dim);
+    margin-bottom: 4px;
+  }
+
+  #ai-road {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 16px;
+    font-weight: 900;
+    color: var(--yellow);
+    text-shadow: 0 0 10px rgba(255,179,0,0.5);
+    letter-spacing: 2px;
+  }
+
+  #ai-phase {
+    font-size: 10px;
+    color: var(--text-mid);
+    margin-top: 3px;
+  }
+
+  /* Road cards */
+  .road-card {
+    background: var(--panel-bg);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 9px 11px;
+    position: relative;
+    transition: border-color 0.3s, box-shadow 0.3s;
+  }
+
+  .road-card.green-active {
+    border-color: var(--green);
+    box-shadow: 0 0 14px rgba(0,255,204,0.15), inset 0 0 20px rgba(0,255,204,0.03);
+  }
+
+  .road-card.yellow-active {
+    border-color: var(--yellow);
+    box-shadow: 0 0 10px rgba(255,179,0,0.12);
+  }
+
+  .card-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 6px;
+  }
+
+  .card-road-name {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 3px;
+    color: var(--text-dim);
+  }
+
+  .road-card.green-active .card-road-name { color: var(--green); }
+  .road-card.yellow-active .card-road-name { color: var(--yellow); }
+
+  .signal-dot {
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    background: var(--red);
+    box-shadow: 0 0 5px rgba(255,59,59,0.6);
+    transition: background 0.3s, box-shadow 0.3s;
+  }
+
+  .signal-dot.green { background: var(--green); box-shadow: 0 0 8px rgba(0,255,204,0.8); }
+  .signal-dot.yellow { background: var(--yellow); box-shadow: 0 0 8px rgba(255,179,0,0.7); }
+
+  .card-stats {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 4px 8px;
+    font-size: 10px;
+  }
+
+  .stat-item { display: flex; flex-direction: column; }
+  .stat-lbl { color: var(--text-dim); font-size: 8px; letter-spacing: 2px; }
+  .stat-val { color: var(--text-bright); font-size: 12px; }
+  .road-card.green-active .stat-val { color: var(--green); }
+
+  .prio-val {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 10px;
+    font-weight: 700;
+  }
+
+  .car-meter {
+    margin-top: 7px;
+    height: 4px;
+    background: #0f1420;
+    border-radius: 2px;
+    overflow: hidden;
+  }
+
+  .car-meter-fill {
+    height: 100%;
+    border-radius: 2px;
+    background: #1f2d40;
+    transition: width 0.6s ease;
+  }
+
+  .road-card.green-active .car-meter-fill {
+    background: var(--green);
+    box-shadow: 0 0 4px var(--green);
+  }
+
+  .road-card.yellow-active .car-meter-fill {
+    background: var(--yellow);
+  }
+
+  /* Global stats */
+  #global-stats {
+    background: var(--panel-bg);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 9px 11px;
+  }
+
+  .g-tag {
+    font-size: 8px;
+    letter-spacing: 5px;
+    color: var(--text-dim);
+    margin-bottom: 7px;
+  }
+
+  .g-rows { display: flex; flex-direction: column; gap: 4px; }
+
+  .g-row {
+    display: flex;
+    justify-content: space-between;
+    font-size: 11px;
+    padding-bottom: 4px;
+    border-bottom: 1px solid #0f1420;
+  }
+
+  .g-row:last-child { border-bottom: none; padding-bottom: 0; }
+
+  .g-label { color: var(--text-dim); }
+
+  .g-val {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 11px;
+    color: var(--green);
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>AI TRAFFIC CONTROL</h1>
+  <div class="subtitle">Adaptive Signal Priority System · v2.0</div>
+</header>
+
+<div id="layout">
+  <canvas id="canvas" width="560" height="560"></canvas>
+
+  <div id="panel">
+    <!-- AI Decision -->
+    <div id="ai-box">
+      <div class="ai-tag">▸ AI DECISION</div>
+      <div id="ai-road">ANALYZING…</div>
+      <div id="ai-phase">Computing priority scores...</div>
+    </div>
+
+    <!-- Road Cards -->
+    <div class="road-card" id="card-North">
+      <div class="card-top">
+        <div class="card-road-name">▲ NORTH</div>
+        <div class="signal-dot" id="dot-North"></div>
+      </div>
+      <div class="card-stats">
+        <div class="stat-item"><div class="stat-lbl">VEHICLES</div><div class="stat-val" id="v-North">0</div></div>
+        <div class="stat-item"><div class="stat-lbl">AVG WAIT</div><div class="stat-val" id="w-North">0.0s</div></div>
+        <div class="stat-item"><div class="stat-lbl">PRIORITY</div><div class="stat-val prio-val" id="p-North">0.0</div></div>
+        <div class="stat-item"><div class="stat-lbl">CLEARED</div><div class="stat-val" id="c-North">0</div></div>
+      </div>
+      <div class="car-meter"><div class="car-meter-fill" id="m-North"></div></div>
+    </div>
+
+    <div class="road-card" id="card-South">
+      <div class="card-top">
+        <div class="card-road-name">▼ SOUTH</div>
+        <div class="signal-dot" id="dot-South"></div>
+      </div>
+      <div class="card-stats">
+        <div class="stat-item"><div class="stat-lbl">VEHICLES</div><div class="stat-val" id="v-South">0</div></div>
+        <div class="stat-item"><div class="stat-lbl">AVG WAIT</div><div class="stat-val" id="w-South">0.0s</div></div>
+        <div class="stat-item"><div class="stat-lbl">PRIORITY</div><div class="stat-val prio-val" id="p-South">0.0</div></div>
+        <div class="stat-item"><div class="stat-lbl">CLEARED</div><div class="stat-val" id="c-South">0</div></div>
+      </div>
+      <div class="car-meter"><div class="car-meter-fill" id="m-South"></div></div>
+    </div>
+
+    <div class="road-card" id="card-West">
+      <div class="card-top">
+        <div class="card-road-name">◄ WEST</div>
+        <div class="signal-dot" id="dot-West"></div>
+      </div>
+      <div class="card-stats">
+        <div class="stat-item"><div class="stat-lbl">VEHICLES</div><div class="stat-val" id="v-West">0</div></div>
+        <div class="stat-item"><div class="stat-lbl">AVG WAIT</div><div class="stat-val" id="w-West">0.0s</div></div>
+        <div class="stat-item"><div class="stat-lbl">PRIORITY</div><div class="stat-val prio-val" id="p-West">0.0</div></div>
+        <div class="stat-item"><div class="stat-lbl">CLEARED</div><div class="stat-val" id="c-West">0</div></div>
+      </div>
+      <div class="car-meter"><div class="car-meter-fill" id="m-West"></div></div>
+    </div>
+
+    <div class="road-card" id="card-East">
+      <div class="card-top">
+        <div class="card-road-name">EAST ►</div>
+        <div class="signal-dot" id="dot-East"></div>
+      </div>
+      <div class="card-stats">
+        <div class="stat-item"><div class="stat-lbl">VEHICLES</div><div class="stat-val" id="v-East">0</div></div>
+        <div class="stat-item"><div class="stat-lbl">AVG WAIT</div><div class="stat-val" id="w-East">0.0s</div></div>
+        <div class="stat-item"><div class="stat-lbl">PRIORITY</div><div class="stat-val prio-val" id="p-East">0.0</div></div>
+        <div class="stat-item"><div class="stat-lbl">CLEARED</div><div class="stat-val" id="c-East">0</div></div>
+      </div>
+      <div class="car-meter"><div class="car-meter-fill" id="m-East"></div></div>
+    </div>
+
+    <!-- Global Stats -->
+    <div id="global-stats">
+      <div class="g-tag">▸ SESSION STATISTICS</div>
+      <div class="g-rows">
+        <div class="g-row"><span class="g-label">Total Cleared</span><span class="g-val" id="g-cleared">0</span></div>
+        <div class="g-row"><span class="g-label">Signal Cycles</span><span class="g-val" id="g-cycles">0</span></div>
+        <div class="g-row"><span class="g-label">Avg Network Wait</span><span class="g-val" id="g-avgwait">0.00s</span></div>
+        <div class="g-row"><span class="g-label">Total Queued</span><span class="g-val" id="g-queued">0</span></div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+// ─────────────────────────────────────────────
+// CANVAS SETUP
+// ─────────────────────────────────────────────
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d');
+const W = 560, H = 560;
+const CX = W / 2, CY = H / 2; // 280, 280
+const RW = 80;   // total road width
+const LW = RW / 2; // lane width = 40
+
+const INT_L = CX - LW, INT_R = CX + LW; // 240, 320
+const INT_T = CY - LW, INT_B = CY + LW; // 240, 320
+
+// Car geometry
+const CAR_SHORT = 16, CAR_LONG = 26, CAR_GAP = 34;
+
+// ─────────────────────────────────────────────
+// SIMULATION STATE
+// ─────────────────────────────────────────────
+const ROADS = ['North', 'South', 'East', 'West'];
+
+let traffic  = { North: 8,  South: 6,  East: 10, West: 5  };
+let waiting  = { North: 2,  South: 1.5, East: 3,  West: 1 };
+let cleared  = { North: 0,  South: 0,   East: 0,  West: 0 };
+let signals  = { North: 'red', South: 'red', East: 'red', West: 'red' };
+let currentGreen = null;
+let totalCleared = 0, cycleCount = 0;
+let glowTime = 0;
+
+// ─────────────────────────────────────────────
+// ROAD CONFIGURATION
+// lane centers, queue positions, movement axes
+// ─────────────────────────────────────────────
+const CFG = {
+  North: {
+    // incoming from top, moving southward
+    vert: true,
+    laneX: CX + LW / 2,          // x=300: right lane of road
+    qStartY: INT_T - CAR_LONG / 2 - 4,  // first car just above stop line
+    qStepY: -CAR_GAP,
+    spawnX: CX + LW / 2, spawnY: INT_T - CAR_LONG / 2,
+    dx: 0, dy: 1,                 // move south
+    exitY: H + 50,
+    tlX: INT_R + 18, tlY: INT_T + 4, // traffic light position
+  },
+  South: {
+    vert: true,
+    laneX: CX - LW / 2,          // x=260: left lane = right for northbound
+    qStartY: INT_B + CAR_LONG / 2 + 4,
+    qStepY: CAR_GAP,
+    spawnX: CX - LW / 2, spawnY: INT_B + CAR_LONG / 2,
+    dx: 0, dy: -1,                // move north
+    exitY: -50,
+    tlX: INT_L - 18, tlY: INT_B - 4,
+  },
+  West: {
+    vert: false,
+    laneY: CY + LW / 2,          // y=300: bottom lane = right for eastbound
+    qStartX: INT_L - CAR_LONG / 2 - 4,
+    qStepX: -CAR_GAP,
+    spawnX: INT_L - CAR_LONG / 2, spawnY: CY + LW / 2,
+    dx: 1, dy: 0,                 // move east
+    exitX: W + 50,
+    tlX: INT_L + 4, tlY: INT_B + 18,
+  },
+  East: {
+    vert: false,
+    laneY: CY - LW / 2,          // y=260: top lane = right for westbound
+    qStartX: INT_R + CAR_LONG / 2 + 4,
+    qStepX: CAR_GAP,
+    spawnX: INT_R + CAR_LONG / 2, spawnY: CY - LW / 2,
+    dx: -1, dy: 0,                // move west
+    exitX: -50,
+    tlX: INT_R - 4, tlY: INT_T - 18,
+  },
+};
+
+// ─────────────────────────────────────────────
+// CAR COLOR PALETTES (distinct per road)
+// ─────────────────────────────────────────────
+const PALETTES = {
+  North: ['#ff6b6b','#ff8e53','#ffd166','#ff4d6d','#c77dff'],
+  South: ['#4cc9f0','#4895ef','#72efdd','#56cfe1','#80ffdb'],
+  West:  ['#f77f00','#fcbf49','#ffb347','#f4a261','#e9c46a'],
+  East:  ['#95d5b2','#52b788','#40916c','#b7e4c7','#74c69d'],
+};
+
+let qColorIdx = { North: 0, South: 0, East: 0, West: 0 };
+// Preassign colors to queue slots
+let qColors = {};
+ROADS.forEach(r => {
+  qColors[r] = Array.from({ length: 18 }, (_, i) =>
+    PALETTES[r][i % PALETTES[r].length]
+  );
+});
+
+// ─────────────────────────────────────────────
+// MOVING CAR POOL
+// ─────────────────────────────────────────────
+let movingCars = [];
+
+function spawnCar(road) {
+  const c = CFG[road];
+  const pal = PALETTES[road];
+  movingCars.push({
+    x: c.spawnX,
+    y: c.spawnY,
+    dx: c.dx,
+    dy: c.dy,
+    vert: c.vert,
+    color: pal[Math.floor(Math.random() * pal.length)],
+    speed: 140 + Math.random() * 60,
+    road,
+  });
+}
+
+// ─────────────────────────────────────────────
+// HELPER: ROUNDED RECT
+// ─────────────────────────────────────────────
+function rr(x, y, w, h, r) {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.lineTo(x + w - r, y);
+  ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+  ctx.lineTo(x + w, y + h - r);
+  ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+  ctx.lineTo(x + r, y + h);
+  ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+  ctx.lineTo(x, y + r);
+  ctx.quadraticCurveTo(x, y, x + r, y);
+  ctx.closePath();
+}
+
+// ─────────────────────────────────────────────
+// DRAW: BACKGROUND + CITY BLOCKS
+// ─────────────────────────────────────────────
+function drawBackground() {
+  const g = ctx.createRadialGradient(CX, CY, 30, CX, CY, W * 0.72);
+  g.addColorStop(0, '#111826');
+  g.addColorStop(1, '#060810');
+  ctx.fillStyle = g;
+  ctx.fillRect(0, 0, W, H);
+
+  // City block grids in each corner
+  drawBlock(0, 0, INT_L - 1, INT_T - 1);
+  drawBlock(INT_R + 1, 0, W - INT_R - 1, INT_T - 1);
+  drawBlock(0, INT_B + 1, INT_L - 1, H - INT_B - 1);
+  drawBlock(INT_R + 1, INT_B + 1, W - INT_R - 1, H - INT_B - 1);
+}
+
+function drawBlock(bx, by, bw, bh) {
+  if (bw < 10 || bh < 10) return;
+  const pad = 10;
+  const sz = 22, gap = 7;
+  ctx.fillStyle = '#0c1020';
+
+  for (let x = bx + pad; x < bx + bw - pad - sz; x += sz + gap) {
+    for (let y = by + pad; y < by + bh - pad - sz; y += sz + gap) {
+      const w2 = sz - 2 + (Math.sin(x * 0.5) * 4 | 0);
+      const h2 = sz - 2 + (Math.cos(y * 0.5) * 4 | 0);
+      if (x + w2 > bx + bw - pad || y + h2 > by + bh - pad) continue;
+
+      // Building body
+      ctx.fillStyle = `rgba(15,20,35,${0.6 + Math.sin(x + y) * 0.2})`;
+      rr(x, y, w2, h2, 2);
+      ctx.fill();
+
+      // Window glow dots
+      ctx.fillStyle = `rgba(180,220,255,${0.04 + Math.random() * 0.03})`;
+      for (let wy = y + 3; wy < y + h2 - 4; wy += 5) {
+        for (let wx = x + 3; wx < x + w2 - 4; wx += 5) {
+          if (Math.random() > 0.6) ctx.fillRect(wx, wy, 2, 2);
+        }
+      }
+    }
+  }
+}
+
+// ─────────────────────────────────────────────
+// DRAW: ROADS
+// ─────────────────────────────────────────────
+function drawRoads() {
+  ctx.fillStyle = '#1c1c26';
+
+  // North road
+  ctx.fillRect(INT_L, 0, RW, INT_T);
+  // South road
+  ctx.fillRect(INT_L, INT_B, RW, H - INT_B);
+  // West road
+  ctx.fillRect(0, INT_T, INT_L, RW);
+  // East road
+  ctx.fillRect(INT_R, INT_T, W - INT_R, RW);
+  // Intersection box
+  ctx.fillStyle = '#181820';
+  ctx.fillRect(INT_L, INT_T, RW, RW);
+
+  // Subtle green glow on active road
+  if (currentGreen) {
+    const a = 0.04 + 0.025 * Math.sin(glowTime * 3);
+    ctx.fillStyle = `rgba(0,255,204,${a})`;
+    const r = currentGreen;
+    if (r === 'North') ctx.fillRect(INT_L, 0, RW, INT_T);
+    else if (r === 'South') ctx.fillRect(INT_L, INT_B, RW, H - INT_B);
+    else if (r === 'West') ctx.fillRect(0, INT_T, INT_L, RW);
+    else if (r === 'East') ctx.fillRect(INT_R, INT_T, W - INT_R, RW);
+    
+    // Also glow intersection
+    ctx.fillStyle = `rgba(0,255,204,${a * 0.5})`;
+    ctx.fillRect(INT_L, INT_T, RW, RW);
+  }
+}
+
+// ─────────────────────────────────────────────
+// DRAW: LANE MARKINGS
+// ─────────────────────────────────────────────
+function drawMarkings() {
+  // Dashed center dividers
+  ctx.strokeStyle = 'rgba(255,255,255,0.18)';
+  ctx.lineWidth = 1.5;
+  ctx.setLineDash([10, 9]);
+
+  const pairs = [
+    [CX, 0, CX, INT_T],         // N center
+    [CX, INT_B, CX, H],         // S center
+    [0, CY, INT_L, CY],         // W center
+    [INT_R, CY, W, CY],         // E center
+  ];
+
+  pairs.forEach(([x1, y1, x2, y2]) => {
+    ctx.beginPath();
+    ctx.moveTo(x1, y1);
+    ctx.lineTo(x2, y2);
+    ctx.stroke();
+  });
+
+  ctx.setLineDash([]);
+
+  // Road edge lines
+  ctx.strokeStyle = 'rgba(255,255,255,0.1)';
+  ctx.lineWidth = 1;
+  const edges = [
+    [INT_L, 0, INT_L, INT_T], [INT_R, 0, INT_R, INT_T],       // North edges
+    [INT_L, INT_B, INT_L, H], [INT_R, INT_B, INT_R, H],       // South edges
+    [0, INT_T, INT_L, INT_T], [0, INT_B, INT_L, INT_B],       // West edges
+    [INT_R, INT_T, W, INT_T], [INT_R, INT_B, W, INT_B],       // East edges
+  ];
+  edges.forEach(([x1, y1, x2, y2]) => {
+    ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke();
+  });
+
+  // Stop lines (solid white, on incoming lane only)
+  ctx.strokeStyle = 'rgba(255,255,255,0.55)';
+  ctx.lineWidth = 2.5;
+  // North: incoming = right lane (x: CX to INT_R)
+  ctx.beginPath(); ctx.moveTo(CX, INT_T); ctx.lineTo(INT_R, INT_T); ctx.stroke();
+  // South: incoming = left lane (x: INT_L to CX)
+  ctx.beginPath(); ctx.moveTo(INT_L, INT_B); ctx.lineTo(CX, INT_B); ctx.stroke();
+  // West: incoming = bottom lane (y: CY to INT_B)
+  ctx.beginPath(); ctx.moveTo(INT_L, CY); ctx.lineTo(INT_L, INT_B); ctx.stroke();
+  // East: incoming = top lane (y: INT_T to CY)
+  ctx.beginPath(); ctx.moveTo(INT_R, INT_T); ctx.lineTo(INT_R, CY); ctx.stroke();
+
+  // Crosswalk stripes
+  ctx.fillStyle = 'rgba(255,255,255,0.06)';
+  const CW = 8, CWG = 6, CWL = 12;
+  for (let x = INT_L + 2; x < INT_R - 2; x += CW + CWG) {
+    ctx.fillRect(x, INT_T - CWL - 2, CW, CWL);
+    ctx.fillRect(x, INT_B + 2, CW, CWL);
+  }
+  for (let y = INT_T + 2; y < INT_B - 2; y += CW + CWG) {
+    ctx.fillRect(INT_L - CWL - 2, y, CWL, CW);
+    ctx.fillRect(INT_R + 2, y, CWL, CW);
+  }
+
+  // Flow arrows (direction indicators)
+  ctx.fillStyle = 'rgba(255,255,255,0.07)';
+  ctx.font = '13px serif';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  const arrowCfg = [
+    { text: '↓', xs: [CX + LW/2], ys: [40, 90, 150, 195] },  // North incoming
+    { text: '↑', xs: [CX - LW/2], ys: [H-40, H-90, H-150, H-195] },  // South
+    { text: '→', xs: [40, 90, 150, 195], ys: [CY + LW/2] },  // West
+    { text: '←', xs: [W-40, W-90, W-150, W-195], ys: [CY - LW/2] },  // East
+  ];
+  arrowCfg.forEach(({ text, xs, ys }) => {
+    (xs.length > 1 ? xs : [xs[0]]).forEach(x => {
+      (ys.length > 1 ? ys : [ys[0]]).forEach(y => {
+        ctx.fillText(text, x, y);
+      });
+    });
+  });
+}
+
+// ─────────────────────────────────────────────
+// DRAW: TRAFFIC LIGHTS
+// ─────────────────────────────────────────────
+function drawTrafficLight(road) {
+  const c = CFG[road];
+  const sig = signals[road];
+  const lx = c.tlX, ly = c.tlY;
+
+  // Housing box (vertical, 3 lights)
+  const bW = 14, bH = 38;
+  ctx.fillStyle = '#0a0a10';
+  rr(lx - bW/2, ly - bH/2, bW, bH, 3);
+  ctx.fill();
+  ctx.strokeStyle = '#2a2a3a';
+  ctx.lineWidth = 1;
+  ctx.stroke();
+
+  // Light positions: top=red, mid=yellow, bottom=green
+  const lPos = [
+    { y: ly - 12, col: 'red',    on: sig === 'red',    hex: '#ff3b3b', dim: '#2a0808' },
+    { y: ly,      col: 'yellow', on: sig === 'yellow', hex: '#ffb300', dim: '#2a1e00' },
+    { y: ly + 12, col: 'green',  on: sig === 'green',  hex: '#00ffcc', dim: '#00251a' },
+  ];
+
+  lPos.forEach(({ y, on, hex, dim }) => {
+    if (on) {
+      ctx.shadowColor = hex;
+      ctx.shadowBlur = 14;
+    }
+    ctx.fillStyle = on ? hex : dim;
+    ctx.beginPath();
+    ctx.arc(lx, y, 4.5, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.shadowBlur = 0;
+  });
+
+  // Direction label near traffic light
+  ctx.fillStyle = sig === 'green' ? 'rgba(0,255,204,0.5)'
+                : sig === 'yellow' ? 'rgba(255,179,0,0.4)'
+                : 'rgba(100,120,140,0.3)';
+  ctx.font = '8px Orbitron, monospace';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(road.toUpperCase()[0], lx, ly + bH/2 + 8);
+}
+
+// ─────────────────────────────────────────────
+// DRAW: A SINGLE CAR
+// ─────────────────────────────────────────────
+function drawCar(x, y, color, vert, moving) {
+  const w = vert ? CAR_SHORT : CAR_LONG;
+  const h = vert ? CAR_LONG  : CAR_SHORT;
+
+  if (moving) { ctx.shadowColor = color; ctx.shadowBlur = 6; }
+
+  // Body
+  ctx.fillStyle = color;
+  rr(x - w/2, y - h/2, w, h, 3.5);
+  ctx.fill();
+  ctx.shadowBlur = 0;
+
+  // Roof (darker center strip)
+  ctx.fillStyle = 'rgba(0,0,0,0.35)';
+  if (vert) rr(x - w/2 + 2.5, y - h/4, w - 5, h / 2.2, 2);
+  else      rr(x - w/4, y - h/2 + 2.5, w / 2.2, h - 5, 2);
+  ctx.fill();
+
+  // Windshield (front glass)
+  ctx.fillStyle = 'rgba(160,220,255,0.55)';
+  if (vert) rr(x - w/2 + 3, y - h/2 + 2, w - 6, 6, 2);
+  else      rr(x - w/2 + 2, y - h/2 + 3, 6, h - 6, 2);
+  ctx.fill();
+
+  // Headlights
+  ctx.fillStyle = moving ? 'rgba(255,255,200,0.95)' : 'rgba(255,255,200,0.35)';
+  if (vert) {
+    ctx.fillRect(x - w/2 + 2, y + h/2 - 4, 4, 3);
+    ctx.fillRect(x + w/2 - 6, y + h/2 - 4, 4, 3);
+  } else {
+    ctx.fillRect(x + w/2 - 4, y - h/2 + 2, 3, 4);
+    ctx.fillRect(x + w/2 - 4, y + h/2 - 6, 3, 4);
+  }
+
+  // Tail lights
+  ctx.fillStyle = moving ? 'rgba(255,60,60,0.7)' : 'rgba(255,60,60,0.2)';
+  if (vert) {
+    ctx.fillRect(x - w/2 + 2, y - h/2 + 1, 4, 3);
+    ctx.fillRect(x + w/2 - 6, y - h/2 + 1, 4, 3);
+  } else {
+    ctx.fillRect(x - w/2 + 1, y - h/2 + 2, 3, 4);
+    ctx.fillRect(x - w/2 + 1, y + h/2 - 6, 3, 4);
+  }
+}
+
+// ─────────────────────────────────────────────
+// DRAW: WAITING CAR QUEUE
+// ─────────────────────────────────────────────
+function drawQueue(road) {
+  const c = CFG[road];
+  const count = Math.min(traffic[road], 7);
+  if (count <= 0) return;
+
+  for (let i = 0; i < count; i++) {
+    let x, y;
+    if (c.vert) {
+      x = c.laneX;
+      y = c.qStartY + i * c.qStepY;
+      if (y < 10 || y > H - 10) continue;
+    } else {
+      x = c.qStartX + i * c.qStepX;
+      y = c.laneY;
+      if (x < 10 || x > W - 10) continue;
+    }
+    drawCar(x, y, qColors[road][i], c.vert, false);
+  }
+
+  // Car count badge on corner near road
+  drawBadge(road);
+}
+
+function drawBadge(road) {
+  const count = traffic[road];
+  if (count <= 0) return;
+
+  const pos = {
+    North: [INT_R + 5, 8],
+    South: [INT_L - 5, H - 8],
+    West:  [8, INT_B + 5],
+    East:  [W - 8, INT_T - 5],
+  };
+  const [bx, by] = pos[road];
+  const sig = signals[road];
+
+  const label = count.toString();
+  ctx.font = 'bold 10px Share Tech Mono, monospace';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  const tw = Math.max(ctx.measureText(label).width + 10, 20);
+
+  const col = sig === 'green' ? '#00ffcc'
+            : sig === 'yellow' ? '#ffb300'
+            : '#ff3b3b';
+
+  ctx.fillStyle = col;
+  ctx.shadowColor = col;
+  ctx.shadowBlur = 8;
+  rr(bx - tw/2, by - 9, tw, 18, 4);
+  ctx.fill();
+  ctx.shadowBlur = 0;
+
+  ctx.fillStyle = '#000';
+  ctx.fillText(label, bx, by);
+}
+
+// ─────────────────────────────────────────────
+// DRAW: MOVING CARS (animated)
+// ─────────────────────────────────────────────
+function drawMovingCars() {
+  movingCars.forEach(car => {
+    drawCar(car.x, car.y, car.color, car.vert, true);
+  });
+}
+
+function updateMovingCars(dt) {
+  movingCars = movingCars.filter(car => {
+    car.x += car.dx * car.speed * dt;
+    car.y += car.dy * car.speed * dt;
+    const c = CFG[car.road];
+    if (car.vert) return car.y > -60 && car.y < H + 60;
+    return car.x > -60 && car.x < W + 60;
+  });
+}
+
+// ─────────────────────────────────────────────
+// DRAW: ROAD DIRECTION LABELS (on road surface)
+// ─────────────────────────────────────────────
+function drawRoadLabels() {
+  const labelDefs = {
+    North: [CX, 18, '▲ N'],
+    South: [CX, H - 18, '▼ S'],
+    West:  [16, CY, '◄ W'],
+    East:  [W - 16, CY, 'E ►'],
+  };
+
+  ctx.font = '700 10px Orbitron, sans-serif';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+
+  ROADS.forEach(road => {
+    const [x, y, text] = labelDefs[road];
+    const sig = signals[road];
+    const isGreen = sig === 'green';
+
+    if (isGreen) { ctx.shadowColor = '#00ffcc'; ctx.shadowBlur = 12; }
+
+    ctx.fillStyle = isGreen ? '#00ffcc'
+                  : sig === 'yellow' ? '#ffb300'
+                  : 'rgba(255,255,255,0.2)';
+    ctx.fillText(text, x, y);
+    ctx.shadowBlur = 0;
+  });
+}
+
+// ─────────────────────────────────────────────
+// DRAW: SELECTED DIRECTION OVERLAY ARROW
+// ─────────────────────────────────────────────
+function drawSelectedArrow() {
+  if (!currentGreen) return;
+
+  const a = 0.5 + 0.3 * Math.sin(glowTime * 4);
+  ctx.fillStyle = `rgba(0,255,204,${a})`;
+  ctx.shadowColor = '#00ffcc';
+  ctx.shadowBlur = 16;
+  ctx.font = '700 28px serif';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+
+  const arrows = { North: '↓', South: '↑', West: '→', East: '←' };
+  const positions = {
+    North: [CX + LW/2, CY - 5],
+    South: [CX - LW/2, CY + 5],
+    West:  [CX - 5, CY + LW/2],
+    East:  [CX + 5, CY - LW/2],
+  };
+
+  const [ax, ay] = positions[currentGreen];
+  ctx.fillText(arrows[currentGreen], ax, ay);
+  ctx.shadowBlur = 0;
+}
+
+// ─────────────────────────────────────────────
+// AI DECISION LOGIC
+// ─────────────────────────────────────────────
+function chooseBestRoad() {
+  let best = ROADS[0], bestScore = -1;
+  const scores = {};
+  ROADS.forEach(r => {
+    scores[r] = traffic[r] + waiting[r] * 0.7;
+    if (scores[r] > bestScore) { bestScore = scores[r]; best = r; }
+  });
+  return { road: best, scores };
+}
+
+// ─────────────────────────────────────────────
+// SIMULATION CYCLE
+// ─────────────────────────────────────────────
+function runCycle() {
+  cycleCount++;
+
+  // New incoming vehicles
+  ROADS.forEach(r => {
+    traffic[r] += Math.floor(Math.random() * 4);
+  });
+
+  let chosenRoad;
+  let isEmergency = Math.random() < 0.1;
+
+  if (isEmergency) {
+    chosenRoad = ROADS[Math.floor(Math.random() * ROADS.length)];
+    setAIBox('🚑 EMERGENCY', chosenRoad, 'Emergency vehicle override — immediate priority');
+  } else {
+    const { road, scores } = chooseBestRoad();
+    chosenRoad = road;
+    const score = scores[road].toFixed(1);
+    setAIBox(road + ' ► GO', road,
+      `Priority score: ${score} | Cars: ${traffic[road]} | Wait: ${waiting[road].toFixed(1)}s`);
+  }
+
+  // Yellow transition first
+  ROADS.forEach(r => signals[r] = 'red');
+  signals[chosenRoad] = 'yellow';
+  updatePanel();
+
+  setTimeout(() => {
+    signals[chosenRoad] = 'green';
+    currentGreen = chosenRoad;
+    updatePanel();
+    runGreenPhase(chosenRoad, 4);
+  }, 900);
+}
+
+function runGreenPhase(road, stepsLeft) {
+  if (stepsLeft <= 0) {
+    // Transition to yellow then red
+    signals[road] = 'yellow';
+    currentGreen = null;
+    updatePanel();
+    setTimeout(() => {
+      signals[road] = 'red';
+      updatePanel();
+      setTimeout(runCycle, 500);
+    }, 800);
+    return;
+  }
+
+  // Clear some cars, spawn moving ones
+  const flow = Math.min(traffic[road], Math.floor(Math.random() * 3) + 1);
+  for (let i = 0; i < flow; i++) {
+    setTimeout(() => spawnCar(road), i * 220);
+  }
+
+  traffic[road] = Math.max(0, traffic[road] - flow);
+  cleared[road] += flow;
+  totalCleared += flow;
+  waiting[road] = Math.max(0, waiting[road] - 0.5);
+  ROADS.forEach(r => { if (r !== road) waiting[r] += 0.7; });
+
+  updatePanel();
+  setTimeout(() => runGreenPhase(road, stepsLeft - 1), 1100);
+}
+
+function setAIBox(roadLine, road, reason) {
+  document.getElementById('ai-road').textContent = roadLine;
+  document.getElementById('ai-phase').textContent = reason;
+
+  const box = document.getElementById('ai-box');
+  box.style.borderLeftColor = ROADS.includes(road)
+    ? (signals[road] === 'green' ? '#00ffcc' : '#ffb300')
+    : '#ffb300';
+}
+
+// ─────────────────────────────────────────────
+// UI PANEL UPDATE
+// ─────────────────────────────────────────────
+function updatePanel() {
+  const scores = {};
+  ROADS.forEach(r => scores[r] = traffic[r] + waiting[r] * 0.7);
+
+  ROADS.forEach(road => {
+    const sig = signals[road];
+    const card = document.getElementById('card-' + road);
+    const dot  = document.getElementById('dot-' + road);
+
+    card.className = 'road-card' +
+      (sig === 'green' ? ' green-active' : sig === 'yellow' ? ' yellow-active' : '');
+    dot.className = 'signal-dot' + (sig !== 'red' ? ' ' + sig : '');
+
+    document.getElementById('v-' + road).textContent = traffic[road];
+    document.getElementById('w-' + road).textContent = waiting[road].toFixed(1) + 's';
+    document.getElementById('p-' + road).textContent = scores[road].toFixed(1);
+    document.getElementById('c-' + road).textContent = cleared[road];
+
+    const pct = Math.min(100, (traffic[road] / 16) * 100);
+    document.getElementById('m-' + road).style.width = pct + '%';
+  });
+
+  const avgWait = Object.values(waiting).reduce((a, b) => a + b, 0) / 4;
+  const totalQ  = Object.values(traffic).reduce((a, b) => a + b, 0);
+
+  document.getElementById('g-cleared').textContent = totalCleared;
+  document.getElementById('g-cycles').textContent  = cycleCount;
+  document.getElementById('g-avgwait').textContent = avgWait.toFixed(2) + 's';
+  document.getElementById('g-queued').textContent  = totalQ;
+}
+
+// ─────────────────────────────────────────────
+// RENDER LOOP
+// ─────────────────────────────────────────────
+let lastTime = null;
+
+function render(ts) {
+  if (!lastTime) lastTime = ts;
+  const dt = Math.min((ts - lastTime) / 1000, 0.05);
+  lastTime = ts;
+  glowTime += dt;
+
+  ctx.clearRect(0, 0, W, H);
+
+  drawBackground();
+  drawRoads();
+  drawMarkings();
+
+  ROADS.forEach(road => drawQueue(road));
+  updateMovingCars(dt);
+  drawMovingCars();
+  ROADS.forEach(road => drawTrafficLight(road));
+  drawSelectedArrow();
+  drawRoadLabels();
+
+  requestAnimationFrame(render);
+}
+
+// ─────────────────────────────────────────────
+// START
+// ─────────────────────────────────────────────
+updatePanel();
+runCycle();
+requestAnimationFrame(render);
+</script>
+</body>
+</html>
