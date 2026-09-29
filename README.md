@@ -49,11 +49,50 @@ python traffic_controller.py
 ```
 No external dependencies — just Python 3 with Tkinter (included in most standard installations).
 
+## Reinforcement Learning Agent
+
+The [`rl/`](rl/) folder trains a **Q-learning agent** to control the same intersection and compares it against the original heuristic on identical, unseen traffic.
+
+![Policy comparison](rl/results/comparison.png)
+
+| Mean wait per car | Balanced traffic | Rush hour (N–S heavy) |
+|---|---|---|
+| Fixed-time signal | 17.0 s | 98.2 s |
+| Priority heuristic (original) | 12.8 s | 13.4 s |
+| Longest queue first | 11.4 s | 10.9 s |
+| **Q-learning agent** | **11.2 s** (−12%) | **10.6 s** (−21%) |
+
+*300 test episodes per policy (~17 simulated minutes each), on traffic seeds never used in training. Full results with 95% confidence intervals and 95th-percentile waits: [`rl/results/results.md`](rl/results/results.md).*
+
+**Setup**
+- **Simulator** ([`traffic_env.py`](rl/traffic_env.py)): a discrete-time version of the demo — same arrival rates, 10% emergency overrides, 1–3 cars cleared per green second. One realistic addition: switching the green road costs 1 second of yellow/all-red time, while holding it doesn't.
+- **Reward:** negative vehicle-seconds of queueing each cycle, so maximising reward minimises average delay.
+- **Agent** ([`policies.py`](rl/policies.py)): linear Q-learning. Each road is scored from its queue length, how long its front car has waited, whether it's already green, and overall congestion, with one shared set of learned weights.
+- **Fair comparison:** every policy faces exactly the same arrivals, emergencies and discharge rates per test seed.
+
+**Findings**
+- The agent has the **lowest average wait in both scenarios**, beating the original heuristic by 12–21%. In balanced traffic its edge over plain *longest-queue-first* is small (~1%).
+- Its learned weights show it **prefers holding the current green when that road still has cars**, avoiding the lost switching time. Nobody programmed that; it learned it from the reward.
+- **Trade-off:** in rush hour, the slowest 5% of cars wait longer under the agent (31.5 s) than under the original heuristic (28.1 s), whose waiting-time term protects the quiet roads. It's still far better than longest-queue-first (36.9 s).
+
+**What didn't work (and why)**
+- A **lookup-table Q-learner** came first. It had to bucket queue lengths (e.g. "6–9 cars"), which erased exactly the comparisons that decide which road should go green. Even after 20,000 training episodes it was worse than the simple rules (13.9 s in balanced traffic).
+- The first linear agent **diverged** in rush hour at learning rate 0.01, with weights blowing up to ±20. Lowering it to 0.003 made training stable in both scenarios.
+
+**Run it**
+```bash
+pip install -r rl/requirements.txt
+python rl/train.py      # ~1 minute per scenario
+python rl/evaluate.py   # writes rl/results/
+python -m pytest rl     # simulator sanity tests
+```
+
 ## Possible Extensions
 
-- Replace the heuristic scoring with a reinforcement learning agent that learns optimal signal timing from simulated traffic patterns
+- Add a fairness term to the reward (e.g. penalise the longest-waiting car) to close the rush-hour tail-latency gap
+- Swap the linear agent for a small neural network (DQN) and test on more varied traffic patterns
 - Add multi-intersection coordination (a network of signals communicating with each other)
-- Log historical data to compare heuristic vs. learned policies
+- Run the trained agent live in the browser demo alongside the heuristic
 
 ## Author
 
