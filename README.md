@@ -31,7 +31,7 @@ Two implementations are included:
 5. While green, vehicles are cleared gradually (1–3 per second) rather than all at once.
 6. The dashboard updates live with car counts, wait times, and overall stats.
 
-> **Note on naming:** the repo URL keeps its original name (`ai-traffic-signal-controller`) so existing links and the live demo keep working. The controller itself is a rule-based heuristic, not a learned model.
+> **Note on naming:** the repo URL keeps its original name (`ai-traffic-signal-controller`) so existing links and the live demo keep working. The demo's controller is the rule-based heuristic described above; the learned controller is the separate [reinforcement learning agent](#reinforcement-learning-agent) in `rl/`.
 
 ## Tech Stack
 
