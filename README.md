@@ -1,4 +1,3 @@
-[README.md](https://github.com/user-attachments/files/29744000/README.md)
 # 🚦 AI Traffic Signal Controller
 
 A simulation of an intelligent traffic signal system that dynamically decides which road gets the green light based on live traffic conditions. Built two ways: a Python/Tkinter desktop version and a browser-based HTML/JS/Canvas dashboard.
