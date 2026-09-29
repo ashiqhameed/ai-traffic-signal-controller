@@ -14,7 +14,7 @@ total_cleared = 0
 cycle_count = 0
 
 # ----------------------------
-# AI DECISION (HEURISTIC)
+# SIGNAL DECISION (PRIORITY HEURISTIC)
 # ----------------------------
 def choose_road():
     priority = {}
@@ -109,7 +109,7 @@ def update_simulation():
         status_label.config(text=f"🚑 Emergency at {emergency}", fg="red")
     else:
         chosen = choose_road()
-        status_label.config(text=f"AI Selected: {chosen}", fg="white")
+        status_label.config(text=f"Selected: {chosen}", fg="white")
 
     switch_signal(chosen)
 
@@ -136,11 +136,11 @@ def update_display():
 # GUI SETUP
 # ----------------------------
 root = tk.Tk()
-root.title("🚦 AI Traffic Controller")
+root.title("🚦 Adaptive Traffic Signal Controller")
 root.geometry("720x720")
 root.configure(bg="#1e1e1e")
 
-title = tk.Label(root, text="AI Traffic Signal Controller",
+title = tk.Label(root, text="Adaptive Traffic Signal Controller",
                  font=("Helvetica", 18, "bold"),
                  bg="#1e1e1e", fg="#00ffcc")
 title.pack(pady=10)
