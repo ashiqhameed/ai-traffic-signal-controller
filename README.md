@@ -1,14 +1,14 @@
-# 🚦 AI Traffic Signal Controller
+# 🚦 Adaptive Traffic Signal Controller
 
-A simulation of an intelligent traffic signal system that dynamically decides which road gets the green light based on live traffic conditions. Built two ways: a Python/Tkinter desktop version and a browser-based HTML/JS/Canvas dashboard.
+A simulation of an adaptive traffic signal system that dynamically decides which road gets the green light based on live traffic conditions, using a weighted priority heuristic. Built two ways: a Python/Tkinter desktop version and a browser-based HTML/JS/Canvas dashboard.
 
 🔗 **[Live Demo](https://ashiqhameed.github.io/ai-traffic-signal-controller/traffic_controller.html)** — try it directly in your browser, no setup required
 
-![AI Traffic Controller Demo](demo-screenshot.png)
+![Adaptive Traffic Signal Controller Demo](demo-screenshot.png)
 
 ## Overview
 
-Traditional traffic signals cycle through fixed timers regardless of actual road conditions. This project simulates a smarter alternative: a controller that continuously evaluates traffic volume and wait times across four directions (North, South, East, West) and prioritizes the road that needs it most — while also handling emergency vehicle overrides.
+Traditional traffic signals cycle through fixed timers regardless of actual road conditions. This project simulates an adaptive alternative: a controller that continuously evaluates traffic volume and wait times across four directions (North, South, East, West) and prioritizes the road that needs it most — while also handling emergency vehicle overrides.
 
 Two implementations are included:
 - **`traffic_controller.py`** — desktop simulation using Python and Tkinter
@@ -16,7 +16,7 @@ Two implementations are included:
 
 ## Features
 
-- **Heuristic-based decision engine** — scores each road using a weighted combination of traffic volume and average wait time, then selects the highest-priority road for green light
+- **Heuristic priority engine** — scores each road using a weighted combination of traffic volume and average wait time, then selects the highest-priority road for green light
 - **Emergency vehicle override** — randomly simulated emergency events immediately preempt normal signal logic
 - **Realistic traffic flow simulation** — cars clear gradually during green phases rather than instantly, and non-green roads accumulate wait time
 - **Live animated dashboard** — real-time Tkinter GUI showing signal states, car counts, and average wait per road
@@ -30,6 +30,8 @@ Two implementations are included:
 4. The signal transitions through yellow → red → green with realistic delays.
 5. While green, vehicles are cleared gradually (1–3 per second) rather than all at once.
 6. The dashboard updates live with car counts, wait times, and overall stats.
+
+> **Note on naming:** the repo URL keeps its original name (`ai-traffic-signal-controller`) so existing links and the live demo keep working. The controller itself is a rule-based heuristic, not a learned model.
 
 ## Tech Stack
 
